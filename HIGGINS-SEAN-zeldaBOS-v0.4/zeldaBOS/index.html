@@ -1,0 +1,266 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+		<meta name="author"             content="Sean Higgins" />
+		<link rel="icon" type="image/png" href="favicon.png" />
+		<link rel="stylesheet" href="zeldabos.css" type="text/css" media="screen" />
+		<title>
+			ZELDA-BOS v0.4 - a Browser-based virtual Operating System
+		</title>
+
+		<!-- Globals CONSTANTS and _Variables. Must included be first. -->
+		<script type="text/javascript" src="globals.js"></script>	
+
+		<!-- Host (Hardware Simulation) Routines -->
+		<script type="text/javascript" src="scripts/host/control.js"></script>
+		<script type="text/javascript" src="scripts/host/devices.js"></script>
+		<script type="text/javascript" src="scripts/host/cpu.js"></script>
+
+		<!-- Virtual OS Routines: Make sure Kernel code is last, since it needs those above it. -->
+		<script type="text/javascript" src="scripts/os/fsDD.js"></script>
+		<script type="text/javascript" src="scripts/os/memMan.js"></script>
+		<script type="text/javascript" src="scripts/os/vmm.js"></script>
+		<script type="text/javascript" src="scripts/os/interrupt.js"></script>
+		<script type="text/javascript" src="scripts/os/canvastext.js"></script>	
+		<script type="text/javascript" src="scripts/os/console.js"></script>	
+		<script type="text/javascript" src="scripts/os/deviceDriver.js"></script>
+		<script type="text/javascript" src="scripts/os/deviceDriverKeyboard.js"></script>
+		<script type="text/javascript" src="scripts/os/agendum.js"></script>
+		<script type="text/javascript" src="scripts/os/pcb.js"></script>
+		<script type="text/javascript" src="scripts/os/queue.js"></script>
+		<script type="text/javascript" src="scripts/os/shell.js"></script>
+		<script type="text/javascript" src="scripts/os/kernel.js"></script>
+
+		<!-- Other Routines -->
+		<script type="text/javascript" src="scripts/utils.js"></script>	
+		
+		<script type="text/javascript">
+			function toggleNode(id) {
+				var ele = document.getElementById(id);
+				if( ele.style.display == 'none' ) {
+					ele.style.display = 'inline';
+				}
+				else {
+					ele.style.display = 'none';
+				}
+			}
+		</script>
+	</head>
+
+	<body onload="simInit();">
+		<div style="width:50%; float:left;">
+			<canvas id = "display"
+					width = "500px"
+					height = "500px"
+					tabindex = "3">
+			</canvas>
+		</div>
+		<!-- OTHER HALF -->
+		<div style="width:50%; float:right; overflow-y:scroll; height:504px;">
+			<div>
+				<input type="button"
+					   id = "btnStartOS"
+					   name="brnStartOS"
+					   class="normal_button"
+					   value="POWER ON"
+					   tabindex="0"
+					   onclick="simBtnStartOS_click(this)"
+				/>
+				<input type="button"
+					   id = "btnHaltOS"
+					   name="brnHaltOS"
+					   class="normal_button"
+					   disabled="disabled"
+					   value="HALT"
+					   tabindex="1"
+					   onclick="simBtnHaltOS_click(this)"
+				/>            
+				<input type="button"
+					   id = "btnReset"
+					   name="brnReset"
+					   class="normal_button"
+					   disabled="disabled"
+					   value="RESET"
+					   tabindex="2"
+					   onclick="simBtnReset_click(this)"
+				/>
+				<input type = "button"
+					   id = "singleStep"
+					   name = "singleStep"
+					   class = "normal_button"
+					   value = "SINGLE STEP"
+					   tabindex = "2"
+					   onclick = "simBtnSingleStep_click(this)"
+				/>
+				<input type = "button"
+					   id = "enableStep"
+					   name = "enableStep"
+					   class = "normal_button"
+					   value = "ENABLE SINGLE STEP"
+					   tabindex = "2"
+					   onclick = "simBtnEnableStep_click(this)"
+				/>
+			</div>
+			
+			<div>
+				<input type="button"
+					   class="normal_button"
+					   value="TOGGLE LOG"
+					   onclick="toggleNode('taLog');"
+				/>
+				<input type="button"
+					   class="normal_button"
+					   value="TOGGLE INPUT"
+					   onclick="toggleNode('progInputPriority');toggleNode('progInputText');toggleNode('progInput');"
+				/>
+				<input type="button"
+					   class="normal_button"
+					   value="TOGGLE RAM"
+					   onclick="toggleNode('ramContents');"
+				/>
+				<input type="button"
+					   class="normal_button"
+					   value="TOGGLE CPU REGS"
+					   onclick="toggleNode('progLog');"
+				/>
+				<input type="button"
+					   class="normal_button"
+					   value="TOGGLE PCB"
+					   onclick="toggleNode('pcbLog');"
+				/>
+				<input type="button"
+					   class="normal_button"
+					   value="TOGGLE SCHEDULER"
+					   onclick="toggleNode('agendumLog');"
+				/>
+				<input type="button"
+					   class="normal_button"
+					   value="TOGGLE FSDD"
+					   onclick="toggleNode('fsddLog');"
+				/>
+				<input type="button"
+					   class="normal_button"
+					   value="TOGGLE DEBUGGER"
+					   onclick="toggleNode('debugger');"
+				/>
+				<input type="button"
+					   class="normal_button"
+					   value="TOGGLE SEAN'S FAVORITES"
+					   onclick="
+						toggleNode('debugger');
+						toggleNode('taLog');
+						toggleNode('progInputPriority');toggleNode('progInputText');toggleNode('progInput');
+					"
+				/>
+			</div>
+			
+			<textarea name="taLog"
+					  id = "taLog"
+					  rows="10"
+					  cols="65"
+					  readonly = "readonly"
+					  wrap = "off"
+			></textarea>
+			
+			<input 
+				type  = "text"
+				name  = "progInputPriority"
+				id    = "progInputPriority"
+				value = "0"
+			/>
+			<label
+				name  = "progInputText"
+				id    = "progInputText"
+			>Priority</label>
+			
+			<textarea 
+				name = "progInput"
+				id   = "progInput"
+				rows = "5"
+				cols = "65"
+			>A9 03 8D 41 00 A9 01 8D 40 00 AC 40 00 A2 01 FF EE 40 00 AE 40 00 EC 41 00 D0 EF A9 44 8D 42 00 A9 4F 8D 43 00 A9 4E 8D 44 00 A9 45 8D 45 00 A9 00 8D 46 00 A2 02 A0 42 FF 00</textarea>
+			
+			<textarea name = "ramContents"
+					  id   = "ramContents"
+					  rows = "10"
+					  cols = "65"
+					  readonly = "readonly"
+					  wrap = "off"
+			></textarea>
+		
+			<textarea name = "progLog"
+					  id   = "progLog"
+					  rows = "3"
+					  cols = "18"
+					  readonly = "readonly"
+			></textarea>
+
+			<textarea name = "agendumLog"
+					  id   = "agendumLog"
+					  rows = "4"
+					  cols = "26"
+					  readonly = "readonly"
+			></textarea>
+
+			<textarea name = "pcbLog"
+					  id   = "pcbLog"
+					  rows = "6"
+					  cols = "32"
+					  readonly = "readonly"
+			></textarea>
+			
+			<textarea name = "fsddLog"
+					  id   = "fsddLog"
+					  rows = "6"
+					  cols = "68"
+					  readonly = "readonly"
+			></textarea>
+			
+			<div id="debugger" style="border: 1px solid black;">
+				DEBUGGER
+				<input type="button"
+					   class="normal_button"
+					   value="SET"
+					   onclick="
+							var page = (document.getElementById('page')).value;
+							var addr = parseInt((document.getElementById('addr')).value , 16);
+							var value = (document.getElementById('val')).value;
+							PAGE[page][addr] = value;
+							_CPU.displayMemory();
+					   "
+				/>
+				<input type="button"
+					   class="normal_button"
+					   value="GET"
+					   onclick="
+							var page = ( document.getElementById('page') ).value;
+							var addr = parseInt( ( document.getElementById('addr') ).value , 16);
+							( document.getElementById('val') ).value = PAGE[page][addr];
+					   "
+				/>
+				<br/>
+				<input type = "text"
+				       id = "page"
+					   value = "3"
+				>PAGENUM</input>
+				<br/>
+				<input type = "text"
+				       id = "addr"
+					   value = "5A"
+				>ADDR</input>
+				<br/>
+				<input type = "text"
+				       id = "val"
+					   value = "01"
+				>VALUE</input>
+			</div>
+			<div>
+				Copyright &copy; 2008 - 2012 No Rights Reserved. - 
+				Reproduction is prohibited without the express written consent of 
+				Ted Codd, Stevie Ray Vaughan, and Ian Fleming.  
+				I also enjoy the color periwinkle.
+			</div>
+		</div>
+	</body>
+</html>
