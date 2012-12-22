@@ -13,6 +13,7 @@ function Shell()
     this.commandList = [];
     this.curses      = "[fuvg],[cvff],[shpx],[phag],[pbpxfhpxre],[zbgureshpxre],[gvgf]";
     this.apologies   = "[sorry]";
+	this.showPrompt  = true;
     // Methods
     this.init        = shellInit;
     this.putPrompt   = shellPutPrompt;
@@ -29,7 +30,7 @@ function shellInit()
     // date
     sc = new ShellCommand();
     sc.command = "date";
-    sc.description = "- Displays the current date and time."
+    sc.description = "- Displays the current date and time.  More info at >man it"
     sc.function = shellDate;
     this.commandList[this.commandList.length] = sc;
 	
@@ -43,7 +44,7 @@ function shellInit()
     // sessiontime
     sc = new ShellCommand();
     sc.command = "sessiontime";
-    sc.description = "- Displays the user's active time in this session."
+    sc.description = "- Displays the user's active time in this session. >man it"
     sc.function = shellSessiontime;
     this.commandList[this.commandList.length] = sc;
 	
@@ -71,14 +72,14 @@ function shellInit()
     // help
     sc = new ShellCommand();
     sc.command = "help";
-    sc.description = "- This is the help command. Seek help."
+    sc.description = "- This is the help command. Seek help.  >man it"
     sc.function = shellHelp;
     this.commandList[this.commandList.length] = sc;
     
     // shutdown
     sc = new ShellCommand();
     sc.command = "shutdown";
-    sc.description = "- Shuts down the virtual OS but leaves the underlying hardware simulation running."
+    sc.description = "- Shuts down virtual OS but continues hardware."
     sc.function = shellShutdown;
     this.commandList[this.commandList.length] = sc;
 
@@ -110,6 +111,13 @@ function shellInit()
     sc.function = shellRot13;
     this.commandList[this.commandList.length] = sc;
 
+    // gameover <string>
+    sc = new ShellCommand();
+    sc.command = "gameover";
+    sc.description = " - (Green Screen of Death) Game Over. >man it";
+    sc.function = shellGameover;
+    this.commandList[this.commandList.length] = sc;
+	
     // prompt <string>
     sc = new ShellCommand();
     sc.command = "prompt";
@@ -118,8 +126,103 @@ function shellInit()
     this.commandList[this.commandList.length] = sc;
 	
     // processes - list the running processes and their IDs
+    sc = new ShellCommand();
+    sc.command = "processes";
+    sc.description = " - displays a list of processes and their ids";
+    sc.function = shellProcesses;
+    this.commandList[this.commandList.length] = sc;
+	
     // kill <id> - kills the specified process id.
+    sc = new ShellCommand();
+    sc.command = "kill";
+    sc.description = "<integer> - Removes a process via it's ID <integer>";
+    sc.function = shellKill;
+    this.commandList[this.commandList.length] = sc;
 
+    // run <id> - runs the specified program
+    sc = new ShellCommand();
+    sc.command = "run";
+    sc.description = "<integer> - runs the specified program";
+    sc.function = shellRun;
+    this.commandList[this.commandList.length] = sc;
+	
+    // autorun <id> - runs the specified program after loading it
+    sc = new ShellCommand();
+    sc.command = "autorun";
+    sc.description = "runs the specified program after loading it";
+    sc.function = shellAutorun;
+    this.commandList[this.commandList.length] = sc;
+	
+    // quantum <ticks> - changes the allowed burst time usage per program for a round robin
+    sc = new ShellCommand();
+    sc.command = "quantum";
+    sc.description = "<integer> - change the time allowed to play on the swing";
+    sc.function = shellQuantum;
+    this.commandList[this.commandList.length] = sc;
+	
+    // runall <id> - runs the specified program
+    sc = new ShellCommand();
+    sc.command = "runall";
+    sc.description = "<integer> - runs all programs";
+    sc.function = shellRunAll;
+    this.commandList[this.commandList.length] = sc;
+	
+    // create <filename> - runs the specified program
+    sc = new ShellCommand();
+    sc.command = "create";
+    sc.description = "<string> - filename to create";
+    sc.function = shellCreate;
+    this.commandList[this.commandList.length] = sc;
+
+    // write <filename> <data> - runs the specified program
+    sc = new ShellCommand();
+    sc.command = "write";
+    sc.description = "<string> - filename containing... <string> - data to be written";
+    sc.function = shellWrite;
+    this.commandList[this.commandList.length] = sc;
+
+    // delete <filename> - runs the specified program
+    sc = new ShellCommand();
+    sc.command = "delete";
+    sc.description = "<string> - filename to delete";
+    sc.function = shellDelete;
+    this.commandList[this.commandList.length] = sc;
+
+    // read <filename> - runs the specified program
+    sc = new ShellCommand();
+    sc.command = "read";
+    sc.description = "<string> - filename to read data from";
+    sc.function = shellRead;
+    this.commandList[this.commandList.length] = sc;
+	
+    // ls - "displays a list of files."
+    sc = new ShellCommand();
+    sc.command = "ls";
+    sc.description = "- displays a list of files.";
+    sc.function = shellLs;
+    this.commandList[this.commandList.length] = sc;
+	
+    // format - "Formats disk"
+    sc = new ShellCommand();
+    sc.command = "format";
+    sc.description = "- formats the disk";
+    sc.function = shellFormat;
+    this.commandList[this.commandList.length] = sc;
+	
+    // set - "- <string> sets values like: cpu scheduling [rr, fcfs, priority]"
+    sc = new ShellCommand();
+    sc.command = "set";
+    sc.description = "- <string> sets values like: cpu scheduling [rr, fcfs, priority]";
+    sc.function = shellSet;
+    this.commandList[this.commandList.length] = sc;
+	
+    // get - "- <string> gets values like: cpu scheduling"
+    sc = new ShellCommand();
+    sc.command = "get";
+    sc.description = "- <string> gets values like: cpu scheduling";
+    sc.function = shellGet;
+    this.commandList[this.commandList.length] = sc;
+	
     //
     // Display the initial prompt.
     this.putPrompt();
@@ -132,7 +235,7 @@ function shellPutPrompt()
 
 function shellHandleInput(buffer)
 {
-    krnTrace("Shell Command~" + buffer);
+	krnTrace("Shell Command~" + buffer);
     // 
     // Parse the input...
     //
@@ -225,7 +328,7 @@ function shellExecute(fn, args)
         _StdIn.advanceLine();
     }
     // ... and finally write the prompt again.
-    this.putPrompt();
+	this.putPrompt();
 }
 
 
@@ -271,6 +374,11 @@ function shellInvalidCommand()
     {
         _StdIn.putText("Type 'help' for, well... help.");
     }
+}
+
+function shellGameover() {
+	// Accept death at the hands of Ganon and be cursed for not rescuing Zelda.
+	_KernelInterruptQueue.enqueue(new Interrput(-1, null));
 }
 
 function shellCurse()
@@ -354,105 +462,140 @@ function shellStatus(args)
 }
 
 //
-// -is a callback function.  Will allow the user to specify the status.
+// -is a callback function.  Will allow the user to load a program from the local device.
 //
-function shellLoad(args)
-{
+function shellLoad(args) {
 	_StdIn.putText("Loading Program...");
 	_StdIn.advanceLine();
 	
-	//TODO Clean this method up entirely
-	var prog = ( document.getElementById( "progInput" ) ).value + " "; // expecting ff_ff_ff but for parsing perpurposes, we make it: ff_ff_ff_
-	
-	_StdIn.advanceLine();
-	_StdIn.putText("PROG: " + prog);
-	_StdIn.advanceLine();
-	
-	var valid = " ";
-	
+	//TODO Downsize this method
+	var prog = ( document.getElementById( "progInput" ) ).value + " "; // expecting ff_ff_ff but for parsing purposes, we make it: ff_ff_ff_
+	var priority = 3;
+	var valid = " ";	
 	var str = new Array();
 	
+	// Try and get the program's priority value
+	try {
+		priority = parseInt( ( document.getElementById( "progInputPriority" ) ).value );
+	}
+	catch( e ) {
+		priority = 3;
+	}
+	if( isNaN( priority ) ) {
+		priority = 3;
+	}
+	
 	// Ensure the string's length is a multiple of 3.
-	if(prog.length % 3 == 0)
-	{
+	if(prog.length % 3 == 0) {
 		// Cycle each set of 3 characters in the entire string
-		for( i = 0; i < prog.length - 3; i += 3 )
-		{
+		for( i = 0; i < prog.length - 3; i += 3 ) {
 			str[0] = prog.charAt( i );
 			str[1] = prog.charAt( i + 1 );
 			
 			// Make sure both chars are hex characters
-			for( j = 0; j < 2; j += 1 )
-			{
-				if( ( new Array("0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F") ).indexOf( str[j] ) == -1 )
-				{
-					valid += " theres a " + prog.charAt(i + j) + " at " + (i + j) + ".";
+			for( j = 0; j < 2; j += 1 ) {
+				if( ( new Array("0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F") ).indexOf( str[j] ) == -1 ) {
+					valid += "Error at position " + (i + j) + ", hex expected and " + prog.charAt(i + j) + " was given.  ";
 				}
-			}
-			
-			if( prog.charAt(i + 2) != " " )
-			{
-				valid += " theres a " + prog.charAt(i + 2) + " at " + (i + 2) + ".";
+			}			
+			if( prog.charAt(i + 2) != " " ) {
+				valid += "Error at position " + (i + 2) + ", hex expected and " + prog.charAt(i + 2) + " was given.  ";
 			}			
 		}
 	}
-	else
-	{
-		valid += " length is " + prog.length + ".";
+	else {
+		valid += "Error. Length is " + prog.length + ".";
 	}
 	
-	if(valid == " ")
-	{
-		loadMem(prog);
+	if(valid == " ") {
+		id = PCB.add(prog, priority);
+		if( id != -1) {
+			_StdIn.putText( "Program loaded.  Process Id is " + id + ".  Priority set to " + priority );
+		}
+		else {
+			_StdIn.putText( "Program was not loaded into memory, PCB is full." );
+		}
 	}
-	else
-	{
+	else {
 		_StdIn.putText("Validation Errors: " + valid);
 		_StdIn.advanceLine();
 	}
+	return id;
 }
-
-function shellHelp(args)
-{
+function shellAutorun(args) {
+	shellRun( shellLoad( "cheeseburger" ) );
+}
+function shellHelp(args) {
     _StdIn.putText("Commands:");
-    for (i in _OsShell.commandList)
-    {
+    for (i in _OsShell.commandList) {
         _StdIn.advanceLine();
         _StdIn.putText("  " + _OsShell.commandList[i].command + " ");
 		_StdIn.putText(_OsShell.commandList[i].description);
     }    
 }
 
-function shellShutdown(args)
-{
+function shellProcesses(args) {
+	// CYCLE THROUGH PROCESSES AND DISPLAY THEIR IDS
+    _StdIn.putText("Processes");
+	_StdIn.advanceLine();
+	_StdIn.putText( PCB.display() );
+	_StdIn.advanceLine();
+}
+
+function shellKill(args) {
+	if( args.length > 0 ) {
+		_StdIn.putText( PCB.kill( parseInt(args) ) );
+	}
+}
+
+function shellRun(args) {
+	if( args.length > 0 ) {
+		PCB.run( args );
+	}
+}
+
+function shellRunAll(args) {
+	if( PCB.size > 0 ) {
+		PCB.runAll( );
+	}
+	else {
+		_StdIn.putText( "No processes in the PCB to run." );
+	}
+}
+
+function shellQuantum(args) {
+	_StdIn.putText("Quantum set to " + args);
+	QUANTUM = parseInt(args);
+}
+
+function shellShutdown(args) {
      _StdIn.putText("Shutting down...");
      // Call Kernal shutdown routine.
     krnShutdown();   
     // TODO: Stop the final prompt from being displayed.  If possible.  Not a high priority.  (Damn OCD!)
 }
 
-function shellCls(args)
-{
+function shellCls(args) {
     _StdIn.clearScreen();
     _StdIn.resetXY();
 }
 
-function shellMan(args)
-{
-    if (args.length > 0)
-    {
+function shellMan(args) {
+    if (args.length > 0) {
         var topic = args[0];
-        switch (topic)
-        {
+        switch (topic) {
             case "help": 
                 _StdIn.putText("Help displays a list of (hopefully) valid commands.");
-                break;
+            break;
             case "date": 
                 _StdIn.putText("Date displays the current date and time.");
-                break;
+            break;
             case "sessiontime": 
                 _StdIn.putText("Sessiontime displays how long a session has been active.");
-                break;
+            break;
+			case "gameover":
+				_StdIn.putText("Accept death at the hands of Ganon and be cursed for not rescuing Zelda.");
+			break;
             default:
                 _StdIn.putText("No manual entry for " + args[0] + ".");
         }        
@@ -463,10 +606,8 @@ function shellMan(args)
     }
 }
 
-function shellTrace(args)
-{
-    if (args.length > 0)
-    {
+function shellTrace(args) {
+    if (args.length > 0) {
         var setting = args[0];
         switch (setting)
         {
@@ -481,41 +622,138 @@ function shellTrace(args)
                     _StdIn.putText("Trace ON");
                 }
                 
-                break;
+            break;
             case "off": 
                 _Trace = false;
                 _StdIn.putText("Trace OFF");                
-                break;                
+            break;                
             default:
-                _StdIn.putText("Invalid arguement.  Usage: trace <on | off>.");
+                _StdIn.putText("Invalid argument.  Usage: trace <on | off>.");
         }        
     }
-    else
-    {
+    else {
         _StdIn.putText("Usage: trace <on | off>");
     }
 }
 
-function shellRot13(args)
-{
-    if (args.length > 0)
-    {
+function shellRot13(args) {
+    if (args.length > 0) {
         _StdIn.putText(args[0] + " = '" + rot13(args[0]) +"'");     // Requires Utils.js for rot13() function.
     }
-    else
-    {
+    else {
         _StdIn.putText("Usage: rot13 <string>  Please supply a string.");
     }
 }
 
-function shellPrompt(args)
-{
+function shellPrompt(args) {
+	if( this.showPrompt == false ) {
+		return;
+	}
     if (args.length > 0)
     {
         _OsShell.promptStr = args[0];
     }
-    else
-    {
+    else {
         _StdIn.putText("Usage: prompt <string>  Please supply a string.");
     }
+}
+
+function shellCreate(args) {
+	if( args.length > 0) {
+		var params = ["create", args];
+		_KernelInterruptQueue.enqueue(new Interrput(HDD_IRQ, params));
+	}
+	else {
+		_StdIn.putText( "No filename specified" );
+	}
+}
+
+function shellWrite(args) {
+	// Ensure there is a filename to write to
+	if( args[0].length > 0 ) {
+		// Take the remaining parameters and put them in one place
+		var writeString = "";
+		
+		// Take the filename first
+		var filename = args.splice(0, 1);
+		
+		// Until args is empty
+		while( args.length > 0 ) {
+			// Take a string off the array and place it into the final string with a space afterwords
+			writeString += args.splice(0, 1) + " ";
+		}
+		
+		// Remove the final trailing space
+		writeString = writeString.substring(0 , writeString.length - 1);
+		
+		var params = ["write", filename, writeString ];
+		_KernelInterruptQueue.enqueue(new Interrput(HDD_IRQ, params));
+	}
+	else {
+		_StdIn.putText( "No filename specified" );
+	}
+}
+
+function shellRead(args) {
+	if( args.length > 0) {
+		var params = ["read", args];
+		_KernelInterruptQueue.enqueue(new Interrput(HDD_IRQ, params));
+	}
+	else {
+		_StdIn.putText( "No filename specified" );
+	}
+}
+
+function shellFormat(args) {
+	var params = ["format"];
+	_KernelInterruptQueue.enqueue(new Interrput(HDD_IRQ, params));
+}
+
+function shellDelete(args) {
+	if( args.length > 0) {
+		var params = ["delete", args];
+		_KernelInterruptQueue.enqueue(new Interrput(HDD_IRQ, params));
+	}
+	else {
+		_StdIn.putText( "No filename specified" );
+	}
+}
+
+function shellLs(args) {
+	var params = ["ls"];
+	_KernelInterruptQueue.enqueue(new Interrput(HDD_IRQ, params));
+}
+
+function shellSet(args) {
+	if( args[0] == "cpu" ) {
+		if( args[1] == "schedule" ) {
+			if( args[2] == "rr" || args[2] == "fcfs" || args[2] == "priority" ){
+				SCHEDULING = args[2];
+				_StdIn.putText( "CPU Schedule set to:" + SCHEDULING );
+			}
+			else {
+				_StdIn.putText( "Please define a usable scheduling technique: rr, fcfs, priority." );
+			}
+		}
+		else {
+			_StdIn.putText( "Variable not found.\nFound Variables: schedule" );
+		}
+	}
+	else {
+		_StdIn.putText( "Variable not found.\nFound Variables: cpu" );
+	}
+}
+
+function shellGet(args) {
+	if( args[0] == "cpu" ) {
+		if( args[1] == "schedule" ) {
+			_StdIn.putText( SCHEDULING );
+		}
+		else {
+			_StdIn.putText( "cpu {schedule}" );
+		}
+	}
+	else {
+		_StdIn.putText( "get {cpu}" );
+	}
 }

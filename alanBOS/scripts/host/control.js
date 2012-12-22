@@ -28,9 +28,23 @@ function simInit()
 	// Enable the added-in canvas text functions (see canvastext.js for provenance and details).
 	CanvasTextFunctions.enable(DRAWING_CONTEXT);
 	// Clear the log text box.
-	document.getElementById("taLog").value="";
+	document.getElementById("taLog").value = "";
 	// Set focus on the start button.
 	document.getElementById("btnStartOS").focus();     // TODO: This does not seem to work.  Why?
+	// Initialize all RAM
+	for(i = 0; i < TOTAL_MEMORY; i += 1) {
+		RAM[i] = "00";
+	}
+	// Init pages
+	PAGE = new Array();
+	for( i = 0; i < 4; i += 1 ) {
+		PAGE[i] = new Array();
+		for( j = 0; j < 256; j += 1 ) {
+			PAGE[i][j] = "00";
+		}
+	}
+		
+	PCB = new pcb();
 }
 
 function simLog(msg, source)
@@ -48,7 +62,8 @@ function simLog(msg, source)
     var now = new Date().getTime();
 
     // Build the log string.   
-    var str = "({ clock:" + clock + ", source:" + source + ", msg:" + msg + ", now:" + now  + " })"  + "\n";    
+    var str = "({ msg:" + msg + ", source:" + source + ", clock:" + clock + ", now:" + now  + " })"  + "\n";    
+    // ALSO WAS: var str = "({ clock:" + clock + ", source:" + source + ", msg:" + msg + ", now:" + now  + " })"  + "\n";    
     // WAS: var str = "[" + clock   + "]," + "[" + now    + "]," + "[" + source + "]," +"[" + msg    + "]"  + "\n";
 
     // Update the log console.
@@ -76,7 +91,16 @@ function simBtnStartOS_click(btn)
     // ... Create and initialize the CPU ...
     _CPU = new cpu();
     _CPU.init();
+	_CPU.displayMemory();
+	
+	MM = new memMan();
+	VMM = new vmm();
+	
+	// Moneypenny (see agendum.js for details)
+	AGENDUM = new Agendum();
 
+	PCB.size = 0;
+	
     // ... then set the clock pulse simulation to call ?????????.
     hardwareClockID = setInterval(simClockPulse, CPU_CLOCK_INTERVAL);
     // .. and call the OS Kernel Bootstrap routine.
@@ -97,8 +121,49 @@ function simBtnHaltOS_click(btn)
 function simBtnReset_click(btn)
 {
     // The easiest and most thorough way to do this is to reload (not refresh) the document.
-    location.reload(true);  
+	//location.reload(true);  
+	
     // That boolean parameter is the 'forceget' flag. When it is true it causes the page to always
     // be reloaded from the server. If it is false or not specified, the browser may reload the 
     // page from its cache, which is not what we want.
+
+    krnShutdown();
+    clearInterval(hardwareClockID);
+	QUANTUM = 6; // of solace  XP
+	// Initialize all RAM
+	for(i = 0; i < TOTAL_MEMORY; i += 1) {
+		RAM[i] = "00";
+	}
+	PCB = new pcb();
+
+    // Moneypenny (see agendum.js for details)
+	AGENDUM = new Agendum();
+	
+	_CPU = new cpu();
+    _CPU.init();
+	_CPU.displayMemory();
+	
+	MM = new memMan();
+	VMM = new vmm();
+	
+    // ... then set the clock pulse simulation to call ?????????.
+    hardwareClockID = setInterval(simClockPulse, CPU_CLOCK_INTERVAL);
+    // .. and call the OS Kernel Bootstrap routine.
+    krnBootstrap();
+    document.getElementById("display").focus();
+}
+
+function simBtnSingleStep_click(btn)
+{
+	STEPNOW = true;
+}
+
+function simBtnEnableStep_click(btn) {
+	if( STEPMODE == true ) {
+		btn.value = "ENABLE SINGLE STEP";
+	}
+	else {
+		btn.value = "DISABLE SINGLE STEP";
+	}
+	STEPMODE = ! STEPMODE;
 }

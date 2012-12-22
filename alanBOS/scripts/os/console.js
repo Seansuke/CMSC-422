@@ -79,11 +79,6 @@ function consoleHandleInput()
 				this.buffer = this.buffer.substring(0, this.buffer.length - 1);
 			}
 		}
-		else if (chr == String.fromCharCode(3)) //  Break
-		{
-			// Attempt an interrupt
-			_KernelInterruptQueue.enqueue(new Interrput(3, null));
-		}
         // TODO: Write a case for Ctrl-C.
         else
         {
@@ -109,20 +104,18 @@ function consolePutText(txt)
     {
 		var chr = txt.substring(0,1);
 		// If the text is a single character...
-		if (txt.length == 1)
-		{
+		if (txt.length == 1) {
 			// Just make text be an empty string.  This will prevent .length causing an exception
 			txt = "";
 		}
-		else
-		{
+		else {
 			// Truncate the first character.
 			txt = txt.substring(1);
 		}
 		// View the offset of the next set of characters
         var offset = DRAWING_CONTEXT.measureText(this.CurrentFont, this.CurrentFontSize, chr);
 		// If the offset and the current position will definitely pass through the width of the canvas...
-		if (this.CurrentXPosition + offset > DRAWING_CONTEXT.canvas.width)
+		if (this.CurrentXPosition + offset > DRAWING_CONTEXT.canvas.width || chr == "\n")
 		{
 			// ...write on the next line instead
 			this.advanceLine();
@@ -134,15 +127,19 @@ function consolePutText(txt)
     }
 }
 
-function consoleAdvanceLine()
-{
+function consoleAdvanceLine() {
     this.CurrentXPosition = 0;
-    this.CurrentYPosition += DEFAULT_FONT_SIZE + FONT_HEIGHT_MARGIN;
-	// if the cursor position will display offscreen...
-    if (this.CurrentYPosition > DRAWING_CONTEXT.canvas.height - FONT_HEIGHT_MARGIN)
-	{
-		this.resetXY();
-		this.clearScreen();
+    // if the cursor position will display offscreen...
+    if (this.CurrentYPosition + DEFAULT_FONT_SIZE + FONT_HEIGHT_MARGIN > DRAWING_CONTEXT.canvas.height - FONT_HEIGHT_MARGIN) {
+		// shift everything to the left:
+		var imageData = DRAWING_CONTEXT.getImageData(0, (DEFAULT_FONT_SIZE + FONT_HEIGHT_MARGIN), DRAWING_CONTEXT.canvas.width, DRAWING_CONTEXT.canvas.height - (DEFAULT_FONT_SIZE + FONT_HEIGHT_MARGIN));
+		DRAWING_CONTEXT.putImageData(imageData, 0, 0);
+		// now clear the bottom-most pixels:
+		DRAWING_CONTEXT.clearRect(0, DRAWING_CONTEXT.canvas.height - (DEFAULT_FONT_SIZE + FONT_HEIGHT_MARGIN), DRAWING_CONTEXT.canvas.width, (DEFAULT_FONT_SIZE + FONT_HEIGHT_MARGIN));
+		this.drawTaskbar();
+	}
+	else {
+		this.CurrentYPosition += DEFAULT_FONT_SIZE + FONT_HEIGHT_MARGIN;
 	}
 }
 

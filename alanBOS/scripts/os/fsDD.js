@@ -366,7 +366,7 @@ function fsddLog() {
 
 function fsddDriverEntry( ) {
 	this.DISK = localStorage;
-	this.DISK["000"] = "ZELDA-BOS";
+	this.DISK["000"] = "AlanBOS-m0d1fi3d";
 	this.status = "loaded";
 	this.logNodeName = "fsddLog";
 	this.log();

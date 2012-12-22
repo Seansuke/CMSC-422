@@ -13,7 +13,7 @@
 //
 // OS Startup and Shutdown Routines   
 //
-	function krnBootstrap()      // Page 8.
+function krnBootstrap()      // Page 8.
 {
     simLog("bootstrap", "host");  // Use simLog because we ALWAYS want this, even if _Trace is off.
 
@@ -35,6 +35,12 @@
     krnKeyboardDriver = new DeviceDriverKeyboard();     // Construct it.
     krnKeyboardDriver.driverEntry();                    // Call the driverEntry() initialization routine.
     krnTrace(krnKeyboardDriver.status);
+	
+    // Load the HDD Device Driver
+    krnTrace("Loading the HDD device driver.");
+	FSDD = new fsDD();
+    FSDD.driverEntry();                    // Call the driverEntry() initialization routine.
+    krnTrace(FSDD.status);
 
     // 
     // ... more?
@@ -77,16 +83,20 @@ function krnOnCPUClockPulse()
         // Process the first interrupt on the interrupt queue.
         // TODO: Implement a priority queye based on the IRQ number/id to enforce interrupt priority.
         var interrput = _KernelInterruptQueue.dequeue();
-        krnInterruptHandler(interrput.irq, interrput.params);        
+        krnInterruptHandler(interrput.irq, interrput.params);
     }
     else if (_CPU.isExecuting) // If there are no interrupts then run a CPU cycle if there is anything being processed.
     {
+		if( PCB.parallel == true ) {
+			PCB.runAllCycle();
+		}
         _CPU.cycle();
     }    
     else                       // If there are no interrupts and there is nothing being executed then just be idle.
     {
        krnTrace("Idle");
     }
+	
 }
 
 
@@ -129,13 +139,56 @@ function krnInterruptHandler(irq, params)    // This is the Interrupt Handler Ro
         break;
         case KEYBOARD_IRQ: 
             krnKeyboardDriver.isr(params);   // Kernel mode device driver
-            _StdIn.handleInput();
+			if( _CPU.isExecuting == false) {
+				_StdIn.handleInput();
+			}
         break;
 		case CLOCK_IRQ:
 			_Console.isr(params);			// Console clock change call
 		break;
 		case PROGRAMCALL_IRQ:
-			//TODO This is the program's system call. 
+			if( parseInt( _CPU.Xreg , 16) == 1 ) {
+				_StdIn.putText( ( parseInt( _CPU.Yreg , 16 ) ).toString() );
+			}
+			else {
+				// Get the RAM address from the Y Register
+				var address = parseInt( _CPU.Yreg , 16 );
+				// Until there is a null string...
+				while( PAGE[ _CPU.page ][ address] != "00" ) { 
+					// Take the value of the Byte in address and translate it as a character code
+					var value = String.fromCharCode( parseInt( PAGE[ _CPU.page ][ address ], 16) );
+					// Print the value
+					_StdIn.putText( value );
+					address += 1;
+				}
+			}
+		break;
+		case DONEEXECUTING_IRQ:
+			// Notify the ready queue that it is done with the current job
+			if( PCB.parallel == false ) {
+				_KernelInterruptQueue.enqueue(new Interrput(DONEEXECUTINGALL_IRQ, null));
+			}
+			else {
+				AGENDUM.jobDone();
+				_CPU.isExecuting = true;
+			}
+		break;
+		case PROGRAMLOADED_IRQ:
+			
+		break;
+		case DONEEXECUTINGALL_IRQ:
+			AGENDUM.empty();
+			PCB.clean();
+			_CPU.init();
+			_CPU.displayMemory();
+			_StdIn.advanceLine();
+			_OsShell.showPrompt = true;
+			_OsShell.putPrompt();
+		break;
+		case HDD_IRQ:
+			_StdIn.putText( FSDD.isr( params ) );
+			_StdIn.advanceLine();
+			_OsShell.putPrompt();
 		break;
         default: 
             krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");
